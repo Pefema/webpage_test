@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protein Viewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/3dmol@2.0.4/build/3Dmol-min.js"></script>
+    <script>
+        async function loadStructure() {
+            const pdbId = document.getElementById('pdbInput').value.trim().toUpperCase();
+            if (!pdbId) {
+                return; // Do nothing if input is empty
+            }
+
+            // Try to load the PDB file first
+            const pdbUrl = `https://files.rcsb.org/download/${pdbId}.pdb`;
+            let structureUrl = pdbUrl;
+            let fileType = "pdb";
+
+            // First attempt: Try to fetch the PDB file
+            let response = await fetch(pdbUrl);
+            if (!response.ok) {
+                // If PDB file is not available, switch to CIF file
+                const cifUrl = `https://files.rcsb.org/download/${pdbId}.cif`;
+                response = await fetch(cifUrl); // Try CIF file
+                if (!response.ok) return; // Exit if CIF file also fails
+                fileType = "mmcif"; // Set to mmCIF if CIF file is used
+            }
+
+            // Once a valid response is obtained, process the structure (PDB or CIF)
+            const structureText = await response.text();
+
+            // Initialize the viewer
+            const viewer = $3Dmol.createViewer("viewer", { backgroundColor: "white" });
+            viewer.addModel(structureText, fileType); // Load as pdb or mmCIF based on the file
+            viewer.setStyle({}, { cartoon: { color: "spectrum" } });
+            viewer.zoomTo();
+            viewer.render();
+        }
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        #viewer {
+            width: 100%;
+            height: 500px;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+        }
+        input, button {
+            font-size: 16px;
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Protein Structure Viewer</h1>
+    <p>Enter a PDB ID to visualize the structure:</p>
+    <input type="text" id="pdbInput" placeholder="e.g., 2IWI">
+    <button onclick="loadStructure()">Load Structure</button>
+
+    <div id="viewer"></div>
+
+    <p>Example PDB IDs: 2IWI, 4N49, 7RPZ</p>
+</body>
+</html>
